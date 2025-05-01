@@ -1,11 +1,23 @@
 import React from "react";
 import { Link, Navigate } from "react-router-dom"; // Import Link component
 import { useNavigate } from 'react-router-dom'; 
+import {toast} from 'react-toastify'
 export default function Navbar() {
   const auth = localStorage.getItem("token") ? true : false;
   const navigate = useNavigate(); 
   const Logout = () => {
     localStorage.removeItem("token");
+    toast.success("Logout successful!",{
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: "indeterminate",
+      theme: "light",
+     
+    })
     navigate("/login", { replace: true });
   };
 

@@ -1,40 +1,105 @@
 import { useState } from 'react';
-
+import { useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 export default function MyTasksPage() {
   const [tasks, setTasks] = useState([
-    { id: 1, title: "Task 1", description: "This is task 1 description", status: "Pending" },
-    { id: 2, title: "Task 2", description: "This is task 2 description", status: "In Progress" },
-    { id: 3, title: "Task 3", description: "This is task 3 description", status: "Completed" },
-    { id: 4, title: "Task 4", description: "This is task 4 description", status: "Pending" },
+  
   ]);
 
   const [taskInputs, setTaskInputs] = useState({ title: '', description: '', status: '' });
-  const [editingTask, setEditingTask] = useState(null);
+  const [taskid, setTaskid] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Edit task
+  
+  const getTasks=async () => {
+    axios.get("https://task3-33kr.onrender.com/api/tasks",{   
+      
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },  
+
+    })
+    .then((response) => {
+      setTasks(response.data);
+    })    
+
+    .catch((error) => {
+
+      console.error('Error fetching tasks:', error);
+    });
+
+  
+  };
+  useEffect(() => { 
+    getTasks();
+  }, []);
+    
+
+
   const handleEditTask = (taskId) => {
-    const task = tasks.find((task) => task.id === taskId);
-    setEditingTask(task);
-    setTaskInputs({ title: task.title, description: task.description, status: task.status });
     setIsModalOpen(true);
+    setTaskid(taskId)
+   
+
   };
 
-  // Save edited task
+
   const handleSaveTask = () => {
-    setTasks(tasks.map((task) =>
-      task.id === editingTask.id
-        ? { ...task, ...taskInputs }
-        : task
-    ));
-    setIsModalOpen(false); // Close the modal
-    setTaskInputs({ title: '', description: '', status: '' });
-    setEditingTask(null);
-  };
+    axios.put(`https://task3-33kr.onrender.com/api/tasks/${taskid}`, taskInputs, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+      .then((response) => {
+       getTasks();
+        setIsModalOpen(false);
+        setTaskInputs({ title: '', description: '', status: '' });
+        toast.success("Task updated successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: "indeterminate",
+          theme: "light",
+        });
+      })
+      .catch((error) => {
+        console.error('Error updating task:', error);
+      });
+  }
 
   // Delete task
   const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter((task) => task.id !== taskId));
+    
+    axios.delete(`https://task3-33kr.onrender.com/api/tasks/${taskId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+      .then((response) => {
+        getTasks();
+        toast.success("Task deleted successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: "indeterminate",
+          theme: "light",
+        });
+      })
+      .catch((error) => {
+        console.error('Error deleting task:', error);
+      });
+
   };
 
   // Get status color
@@ -42,7 +107,7 @@ export default function MyTasksPage() {
     switch (status) {
       case "Pending":
         return "bg-yellow-400";
-      case "In Progress":
+      case "InProgress":
         return "bg-blue-500";
       case "Completed":
         return "bg-green-500";
@@ -59,7 +124,7 @@ export default function MyTasksPage() {
         {/* Task List */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8">
           {tasks.map((task) => (
-            <div key={task.id} className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-xl shadow-xl hover:shadow-2xl transition-transform duration-300 ease-in-out transform hover:scale-105">
+            <div key={task._id} className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-xl shadow-xl hover:shadow-2xl transition-transform duration-300 ease-in-out transform hover:scale-105">
               <h3 className="text-2xl font-semibold text-white">{task.title}</h3>
               <p className="text-gray-200">{task.description}</p>
 
@@ -72,13 +137,13 @@ export default function MyTasksPage() {
               {/* Task Action Buttons: Edit and Delete */}
               <div className="mt-4 flex gap-4">
                 <button
-                  onClick={() => handleEditTask(task.id)}
+                  onClick={() => handleEditTask(task._id)}
                   className="bg-blue-600 text-white rounded-lg px-4 py-2 hover:bg-blue-700 transition ease-in-out duration-300"
                 >
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDeleteTask(task.id)}
+                  onClick={() => handleDeleteTask(task._id)}
                   className="bg-red-600 text-white rounded-lg px-4 py-2 hover:bg-red-700 transition ease-in-out duration-300"
                 >
                   Delete
@@ -92,29 +157,29 @@ export default function MyTasksPage() {
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
             <div className="bg-gradient-to-r from-orange-400 to-yellow-500 p-6 rounded-xl shadow-xl w-96">
-              <h2 className="text-xl font-semibold mb-4 text-gray-800">Edit Task: {editingTask.title}</h2>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800">Edit Task: {taskInputs?.title}</h2>
               <div className="flex flex-col gap-4">
                 <input
                   type="text"
                   placeholder="Task Title"
-                  value={taskInputs.title}
+                  value={taskInputs?.title}
                   onChange={(e) => setTaskInputs({ ...taskInputs, title: e.target.value })}
                   className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 />
                 <input
                   type="text"
                   placeholder="Task Description"
-                  value={taskInputs.description}
+                  value={taskInputs?.description}
                   onChange={(e) => setTaskInputs({ ...taskInputs, description: e.target.value })}
                   className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 />
                 <select
-                  value={taskInputs.status}
+                  value={taskInputs?.status}
                   onChange={(e) => setTaskInputs({ ...taskInputs, status: e.target.value })}
                   className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 >
                   <option value="Pending">Pending</option>
-                  <option value="In Progress">In Progress</option>
+                  <option value="InProgress">In Progress</option>
                   <option value="Completed">Completed</option>
                 </select>
                 <button

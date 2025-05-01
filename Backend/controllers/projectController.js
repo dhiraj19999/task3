@@ -13,7 +13,7 @@ const createProject = async (req, res) => {
             name,
             description,
         });
-
+      
         const createdProject = await project.save();
 
         res.status(201).json(createdProject);
@@ -26,7 +26,7 @@ const getProjects = async (req, res) => {
     try {
         const projects = await Project.find({ user: req.user._id }).populate("user", "name email");
 
-        res.status(200).json(projects);
+        res.status(200).json(projects); 
     } catch (error) {
         res.status(500).json({ message: "Server error" });
     }

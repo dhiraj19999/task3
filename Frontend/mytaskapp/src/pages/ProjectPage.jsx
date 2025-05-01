@@ -1,29 +1,96 @@
-import { useState } from 'react';
-
+import {  useState } from 'react';
+import axios from 'axios';  
+import { useEffect } from 'react';
+import { toast } from 'react-toastify';
 export default function ProjectDashboard() {
-  const [projects, setProjects] = useState([{ id: 1, name: 'Project 1', description: 'Description 1' },{ id: 2, name: 'Project 2', description: 'Description 2' }]);
+  const [projects, setProjects] = useState([]);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [taskInputs, setTaskInputs] = useState({}); // Store task inputs dynamically by project id
 
+  const fetchProjects = async () => {
+    try {
+      const response = await axios.get('https://task3-33kr.onrender.com/api/projects',
+
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      ); // Adjust the URL as needed
+      setProjects(response.data);
+
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+    }
+  };
+
+   useEffect(() => {
+     
+  
+
+    fetchProjects();
+  
+   },[])
+
+
+
   // Create Project
   const handleCreateProject = () => {
-    if (!newProject.name.trim()) return;
-    const newId = Date.now();
-    setProjects([
-      ...projects,
-      { id: newId, name: newProject.name, description: newProject.description },
-    ]);
-    setNewProject({ name: '', description: '' });
-    setTaskInputs({ ...taskInputs, [newId]: { title: '', description: '' } });
+ 
+   console.log('Creating project:', newProject); // You can send this project data to your backend here
+    axios.post('https://task3-33kr.onrender.com/api/projects', newProject, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+      .then((response) => {
+         fetchProjects(); // Refresh the project list after creating a new project
+        setNewProject({ name: '', description: '' });
+        toast.success('Project created successfully!', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: 'indeterminate',
+          theme: 'light',
+        });
+      })
+      .catch((error) => {
+        console.error('Error creating project:', error);
+      });
+
   };
 
   // Add Task
   const handleCreateTask = (projectId) => {
-    const task = taskInputs[projectId];
-    if (!task?.title?.trim()) return;
-    console.log(`Task for project ${projectId}:`, task); // You can send this task data to your backend here
-    // Reset the task input field for this project
-    setTaskInputs({ ...taskInputs, [projectId]: { title: '', description: '' } });
+    
+    axios.post(`https://task3-33kr.onrender.com/api/tasks/${projectId}`, taskInputs, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`,
+      },
+    })
+      .then((response) => {
+        console.log('Task created successfully:', response.data);
+        fetchProjects(); // Refresh the project list after creating a new task
+        toast.success('Task created successfully!', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: 'indeterminate',
+          theme: 'light',
+        });
+      })
+      .catch((error) => {
+        console.error('Error creating task:', error);
+      });
   };
 
   return (
@@ -61,7 +128,7 @@ export default function ProjectDashboard() {
         {/* List of Projects */}
         <div className="space-y-8">
           {projects.map((project) => (
-            <div key={project.id} className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-xl shadow-xl hover:shadow-2xl transition-transform duration-300 ease-in-out transform hover:scale-105">
+            <div key={project._id} className="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-xl shadow-xl hover:shadow-2xl transition-transform duration-300 ease-in-out transform hover:scale-105">
               <h3 className="text-2xl font-semibold text-white">{project.name}</h3>
               <p className="text-gray-200">{project.description}</p>
 
@@ -71,11 +138,11 @@ export default function ProjectDashboard() {
                 <input
                   type="text"
                   placeholder="Task Title"
-                  value={taskInputs[project.id]?.title || ''}
+                  value={taskInputs?.title || ''}
                   onChange={(e) =>
                     setTaskInputs({
                       ...taskInputs,
-                      [project.id]: { ...taskInputs[project.id], title: e.target.value },
+                     title: e.target.value,
                     })
                   }
                   className="border border-gray-300 rounded-lg p-3 w-full mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
@@ -83,17 +150,29 @@ export default function ProjectDashboard() {
                 <input
                   type="text"
                   placeholder="Task Description"
-                  value={taskInputs[project.id]?.description || ''}
+                  value={taskInputs?.description || ''}
                   onChange={(e) =>
                     setTaskInputs({
                       ...taskInputs,
-                      [project.id]: { ...taskInputs[project.id], description: e.target.value },
+                     description: e.target.value 
                     })
                   }
                   className="border border-gray-300 rounded-lg p-3 w-full mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
                 />
+                <select
+                  value={taskInputs?.status || ''}
+                  onChange={(e) =>
+                    setTaskInputs({...taskInputs,status: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg p-3 w-full mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                >
+                  <option value="">Select Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="InProgress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                </select>
                 <button
-                  onClick={() => handleCreateTask(project.id)}
+                  onClick={() => handleCreateTask(project._id)}
                   className="bg-blue-600 text-white rounded-lg px-4 py-3 mt-4 hover:bg-blue-700 transition ease-in-out duration-300"
                 >
                   Add Task

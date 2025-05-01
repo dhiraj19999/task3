@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"
+import {toast,ToastContainer} from 'react-toastify'
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
 const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ const [email, setEmail] = useState("");
   const handleSignup = () => {
 
     // Handle signup logic here
-    axios.post("http://localhost:5000/api/users/register", {
+    axios.post("https://task3-33kr.onrender.com/api/users/register", {
     name,
       country,
       email,
@@ -22,6 +23,17 @@ const [email, setEmail] = useState("");
     .then((response) => {
       console.log(response.data);
       localStorage.setItem("token", response.data.token);
+      toast.success("Account created successfully!",{
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: "indeterminate",
+        theme: "light",
+        onClose: () => console.log("Toast is closed!"),
+      })
       navigate("/projects", { replace: true });
     })
     .catch((error) => {
@@ -32,14 +44,27 @@ const [email, setEmail] = useState("");
  
 const handleLogin = () => {
   
-    axios.post("http://localhost:5000/api/users/login", {
+    axios.post("https://task3-33kr.onrender.com/api/users/login", {
       email,
       password,
     })
     .then((response) => {
       console.log(response.data.token);
       localStorage.setItem("token", response.data.token);
-      navigate("/projects", { replace: true });
+      toast.success("Login successful!",{
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: "indeterminate",
+        theme: "dark",
+       
+      })
+     
+        navigate("/projects", { replace: true });
+    
     })
     .catch((error) => {
       console.error("There was an error logging in!", error);
@@ -50,7 +75,7 @@ const handleLogin = () => {
 
 
 
-  return (
+  return (<> 
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 px-4">
       <motion.div
         initial={{ opacity: 0, y: -50 }}
@@ -117,6 +142,6 @@ const handleLogin = () => {
           </p>
         </div>
       </motion.div>
-    </div>
+    </div> </>
   );
 }
